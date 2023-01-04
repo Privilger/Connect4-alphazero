@@ -1,9 +1,10 @@
 import numpy as np
 import logging
 
+
 class Game:
 
-	def __init__(self):		
+	def __init__(self):
 		self.currentPlayer = 1
 		self.gameState = GameState(np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], dtype=np.int), 1)
 		self.actionSpace = np.array([0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], dtype=np.int)
@@ -19,18 +20,18 @@ class Game:
 		self.currentPlayer = 1
 		return self.gameState
 
-	def step(self, action):
-		next_state, value, done = self.gameState.takeAction(action)
-		self.gameState = next_state
-		self.currentPlayer = -self.currentPlayer
-		info = None
-		return ((next_state, value, done, info))
+    def step(self, action):
+        next_state, value, done = self.gameState.takeAction(action)
+        self.gameState = next_state
+        self.currentPlayer = -self.currentPlayer
+        info = None
+        return (next_state, value, done, info)
 
-	def identities(self, state, actionValues):
-		identities = [(state,actionValues)]
+    def identities(self, state, actionValues):
+        identities = [(state, actionValues)]
 
-		currentBoard = state.board
-		currentAV = actionValues
+        currentBoard = state.board
+        currentAV = actionValues
 
 		currentBoard = np.array([
 			  currentBoard[6], currentBoard[5],currentBoard[4], currentBoard[3], currentBoard[2], currentBoard[1], currentBoard[0]
@@ -50,9 +51,9 @@ class Game:
 			, currentAV[41], currentAV[40],currentAV[39], currentAV[38], currentAV[37], currentAV[36], currentAV[35]
 					])
 
-		identities.append((GameState(currentBoard, state.playerTurn), currentAV))
+        identities.append((GameState(currentBoard, state.playerTurn), currentAV))
 
-		return identities
+        return identities
 
 
 class GameState():
@@ -141,91 +142,86 @@ class GameState():
 		self.value = self._getValue()
 		self.score = self._getScore()
 
-	def _allowedActions(self):
-		allowed = []
-		for i in range(len(self.board)):
-			if i >= len(self.board) - 7:
-				if self.board[i]==0:
-					allowed.append(i)
-			else:
-				if self.board[i] == 0 and self.board[i+7] != 0:
-					allowed.append(i)
+    def _allowedActions(self):
+        allowed = []
+        for i in range(len(self.board)):
+            if i >= len(self.board) - 7:
+                if self.board[i] == 0:
+                    allowed.append(i)
+            else:
+                if self.board[i] == 0 and self.board[i + 7] != 0:
+                    allowed.append(i)
 
-		return allowed
+        return allowed
 
-	def _binary(self):
+    def _binary(self):
 
-		currentplayer_position = np.zeros(len(self.board), dtype=np.int)
-		currentplayer_position[self.board==self.playerTurn] = 1
+        currentplayer_position = np.zeros(len(self.board), dtype=np.int)
+        currentplayer_position[self.board == self.playerTurn] = 1
 
-		other_position = np.zeros(len(self.board), dtype=np.int)
-		other_position[self.board==-self.playerTurn] = 1
+        other_position = np.zeros(len(self.board), dtype=np.int)
+        other_position[self.board == -self.playerTurn] = 1
 
-		position = np.append(currentplayer_position,other_position)
+        position = np.append(currentplayer_position, other_position)
 
-		return (position)
+        return position
 
-	def _convertStateToId(self):
-		player1_position = np.zeros(len(self.board), dtype=np.int)
-		player1_position[self.board==1] = 1
+    def _convertStateToId(self):
+        player1_position = np.zeros(len(self.board), dtype=np.int)
+        player1_position[self.board == 1] = 1
 
-		other_position = np.zeros(len(self.board), dtype=np.int)
-		other_position[self.board==-1] = 1
+        other_position = np.zeros(len(self.board), dtype=np.int)
+        other_position[self.board == -1] = 1
 
-		position = np.append(player1_position,other_position)
+        position = np.append(player1_position, other_position)
 
-		id = ''.join(map(str,position))
+        id = "".join(map(str, position))
 
-		return id
+        return id
 
-	def _checkForEndGame(self):
-		if np.count_nonzero(self.board) == 42:
-			return 1
+    def _checkForEndGame(self):
+        if np.count_nonzero(self.board) == 42:
+            return 1
 
-		for x,y,z,a in self.winners:
-			if (self.board[x] + self.board[y] + self.board[z] + self.board[a] == 4 * -self.playerTurn):
-				return 1
-		return 0
+        for x, y, z, a in self.winners:
+            if (
+                self.board[x] + self.board[y] + self.board[z] + self.board[a]
+                == 4 * -self.playerTurn
+            ):
+                return 1
+        return 0
 
+    def _getValue(self):
+        # This is the value of the state for the current player
+        # i.e. if the previous player played a winning move, you lose
+        for x, y, z, a in self.winners:
+            if (
+                self.board[x] + self.board[y] + self.board[z] + self.board[a]
+                == 4 * -self.playerTurn
+            ):
+                return (-1, -1, 1)
+        return (0, 0, 0)
 
-	def _getValue(self):
-		# This is the value of the state for the current player
-		# i.e. if the previous player played a winning move, you lose
-		for x,y,z,a in self.winners:
-			if (self.board[x] + self.board[y] + self.board[z] + self.board[a] == 4 * -self.playerTurn):
-				return (-1, -1, 1)
-		return (0, 0, 0)
+    def _getScore(self):
+        tmp = self.value
+        return (tmp[1], tmp[2])
 
+    def takeAction(self, action):
+        newBoard = np.array(self.board)
+        newBoard[action] = self.playerTurn
 
-	def _getScore(self):
-		tmp = self.value
-		return (tmp[1], tmp[2])
+        newState = GameState(newBoard, -self.playerTurn)
 
+        value = 0
+        done = 0
 
+        if newState.isEndGame:
+            value = newState.value[0]
+            done = 1
 
+        return (newState, value, done)
 
-	def takeAction(self, action):
-		newBoard = np.array(self.board)
-		newBoard[action]=self.playerTurn
-		
-		newState = GameState(newBoard, -self.playerTurn)
-
-		value = 0
-		done = 0
-
-		if newState.isEndGame:
-			value = newState.value[0]
-			done = 1
-
-		return (newState, value, done) 
-
-
-
-
-	def render(self, logger):
-		for r in range(6):
-			logger.info([self.pieces[str(x)] for x in self.board[7*r : (7*r + 7)]])
-		logger.info('--------------')
-
-
-
+    def render(self, logger):
+        for r in range(6):
+            logger.info([self.pieces[str(x)] for x in self.board[7 * r : (7 * r + 7)]])
+        logger.info("--------------")
